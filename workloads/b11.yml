@@ -1,0 +1,14 @@
+handler: basic
+duration: 30
+username: benchmarker
+password: ${password}
+benchmarks:
+    - name: B11
+      RPS: 10
+      baseURL: ${DirectURL}
+      username: benchmarker
+      password: ${password}
+      methods:
+        - name: GetSimplifiedDiagnostic
+          path: /GetSimplifiedDiagnostic
+          method: GET

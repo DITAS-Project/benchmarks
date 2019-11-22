@@ -1,0 +1,13 @@
+handler: count_100
+username: benchmarker
+password: ${password}
+benchmarks:
+    - name: B9
+      methods:
+        - name: GetSimplifiedDiagnostic
+          path: /GetSimplifiedDiagnostic
+          method: GET
+        - name: GetStreamingData
+          path: /GetStreamingData
+          method: GET
+

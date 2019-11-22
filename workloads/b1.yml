@@ -1,0 +1,20 @@
+handler: basic
+duration: 60
+username: benchmarker
+password: ${password}
+benchmarks:
+    - name: B1
+      duration: 60
+      threads: 10
+
+      methods:
+        - name: GetSimplifiedDiagnostic
+          path: /GetSimplifiedDiagnostic
+          method: GET
+        - name: GetStreamingData
+          path: /GetStreamingData
+          method: GET
+        - name: GetFullDiagnostic
+          path: /GetFullDiagnostic
+          method: GET
+

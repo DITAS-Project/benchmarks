@@ -1,0 +1,17 @@
+handler: count_100
+duration: 20
+username: benchmarker
+password: ${password}
+benchmarks:
+    - name: B6
+      baseURL: ${baseURL}
+      username: benchmarker
+      password: ${password}
+      methods:
+        - name: GetSimplifiedDiagnostic
+          path: /GetSimplifiedDiagnostic
+          method: GET
+        - name: GetStreamingData
+          path: /GetStreamingData
+          method: GET
+

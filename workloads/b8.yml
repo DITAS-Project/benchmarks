@@ -1,0 +1,9 @@
+handler: direct_100
+benchmarks:
+    - name: B8
+      methods:
+        - name: GetSimplifiedDiagnostic
+          method: GET
+        - name: GetStreamingData
+          method: GET
+

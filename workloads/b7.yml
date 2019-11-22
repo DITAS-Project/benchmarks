@@ -1,0 +1,12 @@
+handler: direct_100
+duration: 20
+username: benchmarker
+password: ${password}
+benchmarks:
+    - name: B7
+      methods:
+        - name: GetSimplifiedDiagnostic
+          method: GET
+        - name: GetStreamingData
+          method: GET
+
