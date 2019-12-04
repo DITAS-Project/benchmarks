@@ -12,6 +12,7 @@ To perform the benchmarks you need to have a linux system with:
 To compile the workload generator, you need:
  - git
  - go-lang 1.12
+ - make
 
 To perform data analytics you need:
  - python
@@ -29,5 +30,5 @@ To run the test modify run `make bench-<location>`, before that make sure to pre
 Once your down with the experiments, run `git add data/` and `git commit -m "<Your Name> <Experiment Location>" && git push` to upload the data to this repo.
 
 
-## Analytics and reports
+## Analytics and Reports
 Run `make start` to work on processing the data. Put all plots into the images folder.

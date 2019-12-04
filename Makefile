@@ -55,8 +55,12 @@ bench:
 prep:
 	scripts/prepare.sh
 
+upload:
+	git add data/*
+	git commit 
+	git push
 
 clean:
 	rm -rf ${CLEANUP}
 
-.PHONY: help start clean fonts prep bench build
+.PHONY: help start clean fonts prep bench build upload
