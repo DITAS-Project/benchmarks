@@ -3,21 +3,33 @@
 import pandas as pd
 import numpy as np
 
-def load(store_cache_file=False,cache_file=None):
-    if not store_cache_file and cache_file:
-        return pd.load(cache_file)
+
+def load(load_from_cache=False,store_cache_file=False,data_cache_file=None,monitoring_cache_file=None,es=None):
+    data = None
+    monitoring_data = None
+    if load_from_cache and data_cache_file is not None:
+        data = pd.read_csv(data_cache_file)
     else:
-        #TODO load your data into a DataFrame
-        result = __load()
-        
-        if store_cache_file and cache_file:
-            result.to_csv(cache_file)
-        
-        return result
+        data = __load()
+        if store_cache_file:
+            data.to_csv(data_cache_file)
+    
+    if load_from_cache and monitoring_cache_file is not None:
+        monitoring_data = pd.read_csv(monitoring_cache_file)
+    else:
+        experiment_dates =list(map(lambda x:pd.Timestamp(x),data['runDate'].unique()))
+        monitoring_data = collect_monitoring_data(es,"*",experiment_dates)
+        if store_cache_file:
+            monitoring_data.to_csv(monitoring_cache_file)
+    
+    return data, monitoring_data
     
 import glob
 from datetime import datetime
 from dateutil.parser import parse
+
+from elasticsearch import Elasticsearch
+
 def __load():
     all = None
     for file in glob.glob("data/*"):
@@ -32,14 +44,51 @@ def __load():
         df = pd.read_csv(file, skiprows = 0,error_bad_lines=False)
         df['experiment']=experiment
         df['method']=method
-        df['startTime']=timestamp
-        df['runDate']=date
+        df['startTime']=pd.Timestamp(year=timestamp.year,month=timestamp.month, day=timestamp.day, hour=timestamp.hour, minute=timestamp.minute)
+        df['runDate']=pd.Timestamp(year=date.year,month=date.month, day=date.day)
 
         if (all is None):
             all = df
         else:
             all = pd.concat([all, df], sort=True)
         
-        return all
+    return all
+
+def collect_monitoring_data(es,vdcname,dates=[]):
+    all = None
+    for runDate in dates:
+        esAll = []
+        index = "{}-{}".format(vdcname,runDate.date().strftime("%Y-%m-%d"))
+        window_size = 2500
+        x = es.search(index=index, 
+                      body={"query": {"match_all": {}}},
+                      size=window_size)
+
+        esAll = esAll + x['hits']['hits']
+        total = x['hits']['total']
+        offset = window_size
+        while len(esAll) < total:
+            x = es.search(index=index, body={"query": {"match_all": {}}},size=window_size,from_=offset)
+            offset += len(x['hits']['hits'])
+            esAll = esAll + x['hits']['hits']
+
+        esAll = list(map(lambda x:x["_source"],esAll))
+
+        responses = filter(lambda x:'response.code' in x,esAll)
+        requests = filter(lambda x:'response.code' not in x,esAll)
+
+        responses = pd.DataFrame(responses)
+        responses = responses[['request.id','response.code','response.length']]
+        requests = pd.DataFrame(requests)
+        requests = requests[['request.id','@timestamp','request.operationID','request.requestTime','request.client','request.method','request.path']]
+        df = pd.merge(requests, responses, on='request.id')
+        df['runDate'] = runDate
+
+        if (all is None):
+            all = df
+        else:
+            all = pd.concat([all, df], sort=True)
+            
+    return all
 
     

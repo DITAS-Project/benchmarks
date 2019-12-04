@@ -394,3 +394,4 @@ dmypy.json
 
 # End of https://www.gitignore.io/api/latex,python,jupyternotebooks
 
+scripts/config.sh

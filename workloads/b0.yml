@@ -1,5 +1,5 @@
 handler: basic
-duration: 10
+duration: 1
 username: sebastian
 password: benchmark
 keycloakurl: https://153.92.30.56:58080/auth/realms/288/protocol/openid-connect/token

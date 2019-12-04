@@ -153,6 +153,7 @@ func work(num, conc int, RPS float64, url, method, name, token string, group *sy
 		ua += " " + user_agent
 	}
 	header.Set("User-Agent", ua)
+	header.Set("X-DITAS-Benchmark-ID", name)
 	req.Header = header
 
 	writer, err := os.OpenFile(fmt.Sprintf("%s.csv", name),
