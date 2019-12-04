@@ -20,7 +20,7 @@ start:
 CLEANUP = *.pyc .ipynb_checkpoints/ __pycache__
 
 build:
-	cd doom && 	CGO_ENABLED=0 go build -a --installsuffix cgo --ldflags="-w -s -X main.Build=$(git rev-parse --short HEAD)" -o ../bin/doom
+	cd doom && 	CGO_ENABLED=0 go build -a --installsuffix cgo --ldflags="-w -s -X main.Build=$$(git rev-parse --short HEAD)" -o ../bin/doom
 
 bench-berlin:
 	cp scripts/config.berlin.sh scripts/config.sh
@@ -28,17 +28,17 @@ bench-berlin:
 	scripts/runBenchmark.sh
 
 bench-ideko:
-    cp scripts/config.ideko.sh scripts/config.sh
+	cp scripts/config.ideko.sh scripts/config.sh
 	scripts/preflightChecks.sh
 	scripts/runBenchmark.sh
 
 bench-direct:
-    cp scripts/config.direct.sh scripts/config.sh
+	cp scripts/config.direct.sh scripts/config.sh
 	scripts/preflightChecks.sh
 	scripts/runBenchmark.sh
 
 bench-zurich:
-    cp scripts/config.zurich.sh scripts/config.sh
+	cp scripts/config.zurich.sh scripts/config.sh
 	scripts/preflightChecks.sh
 	scripts/runBenchmark.sh
 
@@ -48,7 +48,7 @@ bench-zurich-noMon:
 	scripts/runBenchmark.sh
 
 bench:
-    cp scripts/config.test.sh scripts/config.sh
+	cp scripts/config.test.sh scripts/config.sh
 	scripts/preflightChecks.sh
 	scripts/runBenchmark.sh
 
