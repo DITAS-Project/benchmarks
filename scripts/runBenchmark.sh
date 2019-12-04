@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 function error_exit
 {
    echo "Error: ${1:-"Unknown Error"}" 1>&2

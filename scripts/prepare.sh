@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 sudo sysctl -w net.core.somaxconn=40000
 sudo sysctl -w net.core.wmem_default=8388608
 sudo sysctl -w net.core.rmem_default=8388608
