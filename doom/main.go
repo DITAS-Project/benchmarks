@@ -19,23 +19,27 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"math"
+	"strings"
 	"sync"
+
+	"encoding/json"
+	"flag"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"runtime"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"gopkg.in/yaml.v2"
-
-	"flag"
-	"net/http"
-	"os"
-	"os/signal"
-	"runtime"
-	"time"
 
 	"github.com/rakyll/hey/requester"
 )
@@ -88,7 +92,7 @@ func setup() {
 	}
 }
 
-const user_agent string = "hey/0.0.1"
+const user_agent string = "doom/0.0.1"
 
 type DoomWork struct {
 	requester.Work
@@ -111,12 +115,13 @@ type Benchmark struct {
 }
 
 type Worklaod struct {
-	Handler    string
-	Duration   int
-	BaseURL    string
-	Username   string
-	Password   string
-	Benchmarks []Benchmark
+	Handler     string
+	Duration    int
+	BaseURL     string
+	KeyCloakURL string
+	Username    string
+	Password    string
+	Benchmarks  []Benchmark
 }
 
 func (b *DoomWork) Run() {
@@ -127,14 +132,15 @@ func (b *DoomWork) Run() {
 	b.group.Done()
 }
 
-func work(num, conc int, RPS float64, url, method, name string, group *sync.WaitGroup) *DoomWork {
+func work(num, conc int, RPS float64, url, method, name, token string, group *sync.WaitGroup) *DoomWork {
 
 	log.Debugf("created worker %s with %d %d %f for %s %s", name, num, conc, RPS, method, url)
 
 	// set content-type
 	header := make(http.Header)
-	header.Set("Content-Type", "text/plain")
 
+	header.Set("Content-Type", "text/plain")
+	header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		log.Fatalf("could not create desired request %s %s: %+v", method, url, err)
@@ -163,7 +169,7 @@ func work(num, conc int, RPS float64, url, method, name string, group *sync.Wait
 			QPS:                RPS,
 			Timeout:            30,
 			DisableCompression: false,
-			DisableKeepAlives:  false,
+			DisableKeepAlives:  true,
 			DisableRedirects:   false,
 			Output:             "csv",
 			Writer:             writer,
@@ -178,6 +184,7 @@ func work(num, conc int, RPS float64, url, method, name string, group *sync.Wait
 
 func main() {
 	setup()
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	runtime.GOMAXPROCS(8)
 
 	workloadPath := viper.GetString("workload")
@@ -245,11 +252,22 @@ func run(w Worklaod) {
 			}
 		}
 
+		token, err := auth(w.KeyCloakURL, w.Username, w.Password)
+		if err != nil {
+			log.Errorf("Failed to optain authentication token")
+		}
+
 		for _, meth := range bench.Methods {
-			url := fmt.Sprintf("%s%s", w.BaseURL, meth.Path)
+			var url string
+			if w.BaseURL == "" {
+				url = fmt.Sprintf("%s%s", viper.GetString("target"), meth.Path)
+			} else {
+				url = fmt.Sprintf("%s%s", w.BaseURL, meth.Path)
+			}
+
 			name := fmt.Sprintf("%s/%s-%s-%s", viper.GetString("data"), bench.Name, meth.Name, time.Now().Format(time.RFC3339))
-			worker := work(requests, bench.Threads, RPS, url, meth.Method,
-				name, &waitgroup)
+			worker := work(requests, bench.Threads, RPS, url, meth.Method, name,
+				token, &waitgroup)
 			workers = append(workers, worker)
 		}
 
@@ -275,6 +293,46 @@ func run(w Worklaod) {
 	time.Sleep(100 * time.Millisecond)
 
 	StopAll(workers)
+}
+
+type token struct {
+	Token     string `json:"access_token"`
+	ExpiresIn int    `json:"expires_in"`
+}
+
+func auth(path, user, password string) (string, error) {
+	//https://<url>:<port>/auth/realms/<blueprint_id>/protocol/openid-connect/token
+	data := url.Values{}
+	data.Set("username", user)
+	data.Set("password", password)
+	data.Set("grant_type", "password")
+	data.Set("client_id", "vdc_client")
+
+	req, err := http.Post(path, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	if err != nil {
+		log.Debugf("auth request failed with %+v", err)
+		return "", err
+	}
+
+	if req.StatusCode > 200 {
+		log.Debugf("auth request failed with status %d", req.StatusCode)
+		return "", fmt.Errorf("Unauthrozied request %d", req.StatusCode)
+	}
+
+	tokenData, err := ioutil.ReadAll(req.Body)
+
+	if err != nil {
+		log.Debugf("failed to parse %+v", err)
+		return "", err
+	}
+	token := token{}
+	err = json.Unmarshal(tokenData, &token)
+	if err != nil {
+		log.Debugf("failed to parse %+v", err)
+		return "", err
+	}
+	log.Infof("got token successfully %d %s", token.ExpiresIn, token.Token)
+	return token.Token, nil
 }
 
 func StopAll(workers []*DoomWork) {

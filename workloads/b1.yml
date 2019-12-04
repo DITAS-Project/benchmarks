@@ -1,20 +1,20 @@
 handler: basic
 duration: 60
-username: benchmarker
-password: ${password}
+username: sebastian
+password: benchmark
+keycloakurl: https://153.92.30.56:58080/auth/realms/288/protocol/openid-connect/token
 benchmarks:
     - name: B1
       duration: 60
       threads: 10
-
       methods:
         - name: GetSimplifiedDiagnostic
-          path: /GetSimplifiedDiagnostic
+          path: /caf/GetSimplifiedDiagnostic?machine=CMS_LJ3Z4P
           method: GET
         - name: GetStreamingData
-          path: /GetStreamingData
+          path: /caf/GetStreamingData?machine=CMS_LJ3Z4P
           method: GET
         - name: GetFullDiagnostic
-          path: /GetFullDiagnostic
+          path: /caf/GetFullDiagnostic?machine=CMS_LJ3Z4P
           method: GET
 

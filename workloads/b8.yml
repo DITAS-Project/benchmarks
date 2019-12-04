@@ -1,9 +1,16 @@
-handler: direct_100
+handler: basic
+username: sebastian
+password: benchmark
+keycloakurl: https://153.92.30.56:58080/auth/realms/288/protocol/openid-connect/token
 benchmarks:
     - name: B8
+      requests: 100
+      threads: 8
       methods:
         - name: GetSimplifiedDiagnostic
+          path: /caf/GetSimplifiedDiagnostic?machine=CMS_LJ3Z4P
           method: GET
         - name: GetStreamingData
+          path: /caf/GetStreamingData?machine=CMS_LJ3Z4P
           method: GET
 
