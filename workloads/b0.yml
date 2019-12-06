@@ -10,4 +10,7 @@ benchmarks:
         - name: GetStreamingData
           path: /caf/GetStreamingData?machine=CMS_LJ3Z4P
           method: GET
+        - name: GetSimplifiedDiagnostic
+        path: /caf/GetSimplifiedDiagnostic?machine=CMS_LJ3Z4P
+        method: GET
 
