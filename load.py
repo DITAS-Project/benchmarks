@@ -4,9 +4,21 @@ import pandas as pd
 import numpy as np
 
 
-def load(load_from_cache=False,store_cache_file=False,data_cache_file=None,monitoring_cache_file=None,es=None):
-    data = None
+def load_monitoring(load_from_cache=False,store_cache_file=False,monitoring_cache_file=None,es=None,experiment_dates=[]):
     monitoring_data = None
+    
+    if load_from_cache and monitoring_cache_file is not None:
+        monitoring_data = pd.read_csv(monitoring_cache_file)
+    else:
+        monitoring_data = collect_monitoring_data(es,"*",experiment_dates)
+        if store_cache_file:
+            monitoring_data.to_csv(monitoring_cache_file)
+    
+    return monitoring_data
+
+def load(load_from_cache=False,store_cache_file=False,data_cache_file=None):
+    data = None
+    
     if load_from_cache and data_cache_file is not None:
         data = pd.read_csv(data_cache_file)
     else:
@@ -14,15 +26,9 @@ def load(load_from_cache=False,store_cache_file=False,data_cache_file=None,monit
         if store_cache_file:
             data.to_csv(data_cache_file)
     
-    if load_from_cache and monitoring_cache_file is not None:
-        monitoring_data = pd.read_csv(monitoring_cache_file)
-    else:
-        experiment_dates =list(map(lambda x:pd.Timestamp(x),data['runDate'].unique()))
-        monitoring_data = collect_monitoring_data(es,"*",experiment_dates)
-        if store_cache_file:
-            monitoring_data.to_csv(monitoring_cache_file)
+   
     
-    return data, monitoring_data
+    return data
     
 import glob
 from datetime import datetime
