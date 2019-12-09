@@ -16,3 +16,5 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	gopkg.in/yaml.v2 v2.2.4
 )
+
+replace github.com/rakyll/hey => github.com/tawalaya/hey v0.1.4-0.20191209141111-4b996f442018

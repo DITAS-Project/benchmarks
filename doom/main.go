@@ -44,6 +44,8 @@ import (
 	"github.com/rakyll/hey/requester"
 )
 
+const timeout = 120
+
 var (
 	Build string
 )
@@ -168,7 +170,7 @@ func work(num, conc int, RPS float64, url, method, name, token string, group *sy
 			N:                  num,
 			C:                  conc,
 			QPS:                RPS,
-			Timeout:            20,
+			Timeout:            timeout,
 			DisableCompression: false,
 			DisableKeepAlives:  true,
 			DisableRedirects:   false,
