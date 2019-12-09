@@ -168,7 +168,7 @@ func work(num, conc int, RPS float64, url, method, name, token string, group *sy
 			N:                  num,
 			C:                  conc,
 			QPS:                RPS,
-			Timeout:            30,
+			Timeout:            20,
 			DisableCompression: false,
 			DisableKeepAlives:  true,
 			DisableRedirects:   false,

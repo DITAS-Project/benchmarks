@@ -65,6 +65,7 @@ def collect_monitoring_data(es,vdcname,dates=[]):
     for runDate in dates:
         esAll = []
         index = "{}-{}".format(vdcname,runDate.date().strftime("%Y-%m-%d"))
+        print("loading data from index",index)
         window_size = 2500
         x = es.search(index=index, 
                       body={"query": {"match_all": {}}},
