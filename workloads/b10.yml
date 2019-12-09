@@ -5,8 +5,8 @@ password: benchmark
 keycloakurl: https://153.92.30.56:58080/auth/realms/288/protocol/openid-connect/token
 benchmarks:
     - name: B10
-      threads: 8
-      RPS: 10
+      threads: 2
+      RPS: 1
       methods:
         - name: GetSimplifiedDiagnostic
           path: /caf/GetSimplifiedDiagnostic?machine=CMS_LJ3Z4P
