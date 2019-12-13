@@ -3,20 +3,59 @@
 import pandas as pd
 import numpy as np
 
+import glob
+from datetime import datetime
+from dateutil.parser import parse
 
-def load_monitoring(load_from_cache=False,store_cache_file=False,monitoring_cache_file=None,es=None,experiment_dates=[]):
+from elasticsearch import Elasticsearch
+
+
+def load_vmstat(load_from_cache=False,store_cache_file=False,cache_file=None):
     monitoring_data = None
     
-    if load_from_cache and monitoring_cache_file is not None:
-        monitoring_data = pd.read_csv(monitoring_cache_file)
+    if load_from_cache and cache_file is not None:
+        monitoring_data = pd.read_csv(cache_file)
     else:
-        monitoring_data = collect_monitoring_data(es,"*",experiment_dates)
+        
+        for file in glob.glob("vmstats/*"):
+            df = pd.read_csv(file, skiprows = 0,error_bad_lines=False)
+            if monitoring_data is None:
+                monitoring_data = df
+            else:
+                monitoring_data = pd.concat([monitoring_data, df], sort=True) 
+        #clean up data 
+        monitoring_data["timestamp"] = pd.to_datetime(monitoring_data["timestamp"]+ 3600, unit='s')
+        monitoring_data = monitoring_data.rename(columns={"r":"processes","b":"waiting","swdp":"virtual mem","free":"free","buff":"buffers","si":"mem_on_disk","so":"mem_to_disk","bi":"blockIn","bo":"blockOut","in":"interrupts","cs":"switches","us":"cpu_user","sy":"cpu_system","id":"cpu_idle","wa":"blocked"}) 
         if store_cache_file:
-            monitoring_data.to_csv(monitoring_cache_file)
+            monitoring_data.to_csv(cache_file)
     
     return monitoring_data
 
-def load(load_from_cache=False,store_cache_file=False,data_cache_file=None):
+def load_elastic(load_from_cache=False,store_cache_file=False,cache_file=None,es=None,experiment_dates=[]):
+    monitoring_data = None
+    
+    if load_from_cache and cache_file is not None:
+        monitoring_data = pd.read_csv(cache_file)
+    else:
+        monitoring_data = collect_monitoring_data(es,"*",experiment_dates)
+        if store_cache_file:
+            monitoring_data.to_csv(cache_file)
+    
+    return monitoring_data
+
+def load_rmstats():
+    monitoring_data = None
+    
+    for file in glob.glob("rmstats/*.csv"):
+            df = pd.read_csv(file, skiprows = 0,error_bad_lines=False)
+            if monitoring_data is None:
+                monitoring_data = df
+            else:
+                monitoring_data = pd.concat([monitoring_data, df], sort=True) 
+    
+    return monitoring_data
+
+def load_experiment(load_from_cache=False,store_cache_file=False,data_cache_file=None):
     data = None
     
     if load_from_cache and data_cache_file is not None:
@@ -30,12 +69,6 @@ def load(load_from_cache=False,store_cache_file=False,data_cache_file=None):
     
     return data
     
-import glob
-from datetime import datetime
-from dateutil.parser import parse
-
-from elasticsearch import Elasticsearch
-
 def __load():
     all = None
     for file in glob.glob("data/*"):
@@ -60,26 +93,47 @@ def __load():
         
     return all
 
+def __collect(es,index,query):
+    data = []
+    page = es.search(
+    index = index,
+    scroll = '2m',
+    size = 1000,
+    body = query)
+    if '_scroll_id' in page:
+        
+        sid = page['_scroll_id']
+        scroll_size = page['hits']['total']
+
+        data = data + page['hits']['hits']
+        # Start scrolling
+        while (scroll_size > 0):
+            page = es.scroll(scroll_id = sid, scroll = '2m')
+            # Update the scroll ID
+            sid = page['_scroll_id']
+            # Get the number of results that we returned in the last scroll
+            scroll_size = len(page['hits']['hits'])
+            data = data + page['hits']['hits']
+
+        return data
+    else:
+        return data
+
 def collect_monitoring_data(es,vdcname,dates=[]):
     all = None
     for runDate in dates:
         esAll = []
         index = "{}-{}".format(vdcname,runDate.date().strftime("%Y-%m-%d"))
         print("loading data from index",index)
-        window_size = 2500
-        x = es.search(index=index, 
-                      body={"query": {"match_all": {}}},
-                      size=window_size)
-
-        esAll = esAll + x['hits']['hits']
-        total = x['hits']['total']
-        offset = window_size
-        while len(esAll) < total:
-            x = es.search(index=index, body={"query": {"match_all": {}}},size=window_size,from_=offset)
-            offset += len(x['hits']['hits'])
-            esAll = esAll + x['hits']['hits']
+        
+        esAll =  __collect(es,index,{"query": {"match_all": {}}})
+        
+        if len(esAll) <= 0:
+            continue
+        
 
         esAll = list(map(lambda x:x["_source"],esAll))
+        
 
         responses = filter(lambda x:'response.code' in x,esAll)
         requests = filter(lambda x:'response.code' not in x,esAll)
