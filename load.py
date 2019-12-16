@@ -39,7 +39,8 @@ def load_elastic(load_from_cache=False,store_cache_file=False,cache_file=None,es
     else:
         monitoring_data = collect_monitoring_data(es,"*",experiment_dates)
         if store_cache_file:
-            monitoring_data.to_csv(cache_file)
+            if monitoring_data is not None:
+                monitoring_data.to_csv(cache_file)
     
     return monitoring_data
 
