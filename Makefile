@@ -31,6 +31,8 @@ bench-ideko:
 	cp scripts/config.ideko.sh scripts/config.sh
 	scripts/preflightChecks.sh
 	scripts/runBenchmark.sh
+	cp scripts/config.direct.sh scripts/config.sh
+	scripts/runBenchmark.sh	
 
 bench-direct:
 	cp scripts/config.direct.sh scripts/config.sh
