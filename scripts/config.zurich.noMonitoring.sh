@@ -1,4 +1,4 @@
 #!/bin/bash
 experiments=( 11 )
-basepath="http://212.8.121.134:30000"
+basepath="http://130.149.158.212:8282"
 data="./data"

@@ -2,12 +2,12 @@ handler: basic
 duration: 30
 username: sebastian
 password: benchmark
-keycloakurl: https://153.92.30.56:58080/auth/realms/288/protocol/openid-connect/token
+keycloakurl: https://130.149.158.212:4040/auth/realms/vdc_access/protocol/openid-connect/token
 benchmarks:
     - name: B11
       threads: 2
       RPS: 1
       methods:
-        - name: GetSimplifiedDiagnostic
-          path: /caf/GetSimplifiedDiagnostic?machine=CMS_LJ3Z4P
+        - name: ask
+          path: /ask
           method: GET

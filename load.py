@@ -9,6 +9,12 @@ from dateutil.parser import parse
 
 from elasticsearch import Elasticsearch
 
+def _load_vmstat(monitoring_data):
+    
+    monitoring_data["timestamp"] = pd.to_datetime(monitoring_data["timestamp"]+ 3600, unit='s')
+    monitoring_data = monitoring_data.rename(columns={"r":"processes","b":"waiting","swdp":"virtual mem","free":"free","buff":"buffers","si":"mem_on_disk","so":"mem_to_disk","bi":"blockIn","bo":"blockOut","in":"interrupts","cs":"switches","us":"cpu_user","sy":"cpu_system","id":"cpu_idle","wa":"blocked"}) 
+
+    return monitoring_data
 
 def load_vmstat(load_from_cache=False,store_cache_file=False,cache_file=None):
     monitoring_data = None
@@ -24,8 +30,7 @@ def load_vmstat(load_from_cache=False,store_cache_file=False,cache_file=None):
             else:
                 monitoring_data = pd.concat([monitoring_data, df], sort=True) 
         #clean up data 
-        monitoring_data["timestamp"] = pd.to_datetime(monitoring_data["timestamp"]+ 3600, unit='s')
-        monitoring_data = monitoring_data.rename(columns={"r":"processes","b":"waiting","swdp":"virtual mem","free":"free","buff":"buffers","si":"mem_on_disk","so":"mem_to_disk","bi":"blockIn","bo":"blockOut","in":"interrupts","cs":"switches","us":"cpu_user","sy":"cpu_system","id":"cpu_idle","wa":"blocked"}) 
+        monitoring_data = _load_vmstat(monitoring_data)
         if store_cache_file:
             monitoring_data.to_csv(cache_file)
     
